@@ -33,7 +33,7 @@ class Side
     end
 
     def inspect
-      "BorderCell"
+      self.class.name
     end
   end
 
@@ -66,9 +66,6 @@ class Side
     end
 
     def unmade?
-      puts "unmade?"
-      p self
-
       return true if neighbors_carved <= 1
       return false
     end
@@ -84,14 +81,14 @@ class Side
 
     def inspect
       out = "#{self.class.name} (neighbors_carved #{neighbors_carved} walls):\n"
-      out << "  #{up and up.to_s or "00"}  \n"
-      out << "#{left and left.to_s or "00"}#{to_s}#{right and right.to_s or "00"}\n"
-      out << "  #{down and down.to_s or "00"}  \n"
+      out << "  #{up.to_s or "00"}  \n"
+      out << "#{left.to_s or "00"}#{to_s}#{right.to_s or "00"}\n"
+      out << "  #{down.to_s or "00"}  \n"
       out
     end
 
     def to_s
-      return "  " if carved? 
+      return ".." if carved? 
       return "[]"
     end
   end
@@ -194,18 +191,14 @@ class RecursiveBacktracker
       puts "trying dir: #{dir}"
 
       c = cell.send(dir)
-      puts "c: '#{c}'"
+      p c
       next unless c
 
       next if c.border?
-
-      puts "carved? #{c.carved?.inspect}"
       next if c.carved?
-
-      puts "unmade? #{c.unmade?.inspect}"
       next unless c.unmade?
 
-      puts "found move to #{c}"
+      puts "found move to"
       return c
     end
 
@@ -221,10 +214,6 @@ end
 s1 = Side.new(1, 40)
 
 puts s1
-
-puts s1.cell(10,0)
-puts s1.cell(0,10)
-puts s1.cell(0,0)
 
 begin
   RecursiveBacktracker.new(s1.cell(3, 0))
