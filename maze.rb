@@ -1,20 +1,60 @@
 #!/bin/env ruby
 
 class Side
+  class BorderCell
+    def initialize(neighbor)
+      @neighbor = neighbor
+    end
+
+    def border?
+      return true
+    end
+
+    def carved?
+      return false
+    end
+
+    def carve
+      raise "cannot carve border cell"
+    end
+
+    def unmade?
+      return true
+    end
+
+    def neighbors_carved
+      no = 0
+      no += 1 if @neighbor.carved?
+      return no
+    end
+
+    def to_s
+      "##"
+    end
+
+    def inspect
+      "BorderCell"
+    end
+  end
+
   class Cell
     def initialize
       @carved = nil
 
-      @left = nil
-      @right = nil
-      @up = nil
-      @down = nil
+      @left = BorderCell.new(self)
+      @right = BorderCell.new(self)
+      @up = BorderCell.new(self)
+      @down = BorderCell.new(self)
     end
 
     attr_accessor :left
     attr_accessor :right
     attr_accessor :up
     attr_accessor :down
+
+    def border?
+      return false
+    end
 
     def carved?
       return @carved
@@ -29,26 +69,21 @@ class Side
       puts "unmade?"
       p self
 
-      return true if sourrunded_by >= 3
-      return nil
+      return true if neighbors_carved <= 1
+      return false
     end
 
-    def sourrunded_by
+    def neighbors_carved
       no = 0
-      no += 1 if @left and not @left.carved?
-      no += 1 if @right and not @right.carved?
-      no += 1 if @up and not @up.carved?
-      no += 1 if @down and not @down.carved?
-
-      no += 1 unless @left
-      no += 1 unless @right
-      no += 1 unless @up
-      no += 1 unless @down
+      no += 1 if @left.carved?
+      no += 1 if @right.carved?
+      no += 1 if @up.carved?
+      no += 1 if @down.carved?
       return no
     end
 
     def inspect
-      out = "Cell (sourrunded_by #{sourrunded_by} walls):\n"
+      out = "#{self.class.name} (neighbors_carved #{neighbors_carved} walls):\n"
       out << "  #{up and up.to_s or "00"}  \n"
       out << "#{left and left.to_s or "00"}#{to_s}#{right and right.to_s or "00"}\n"
       out << "  #{down and down.to_s or "00"}  \n"
@@ -78,10 +113,10 @@ class Side
     # link
     @maze.each_with_index do |row, row_no|
       row.each_with_index do |cell, col_no|
-        cell.left = cell(col_no - 1, row_no)
-        cell.right = cell(col_no + 1, row_no)
-        cell.up = cell(col_no, row_no - 1)
-        cell.down = cell(col_no, row_no + 1)
+        cell.left = (cell(col_no - 1, row_no) or BorderCell.new(cell))
+        cell.right = (cell(col_no + 1, row_no) or BorderCell.new(cell))
+        cell.up = (cell(col_no, row_no - 1) or BorderCell.new(cell))
+        cell.down = (cell(col_no, row_no + 1) or BorderCell.new(cell))
       end
     end
   end
@@ -119,7 +154,7 @@ class RecursiveBacktracker
     end
 
     def rand
-      return nil if @dirs.empty?
+      return false if @dirs.empty?
       dir = @dirs[Kernel.rand(@dirs.length)]
       @dirs.delete(dir)
       dir
@@ -162,6 +197,8 @@ class RecursiveBacktracker
       puts "c: '#{c}'"
       next unless c
 
+      next if c.border?
+
       puts "carved? #{c.carved?.inspect}"
       next if c.carved?
 
@@ -173,7 +210,7 @@ class RecursiveBacktracker
     end
 
     puts "move not found"
-    return nil
+    return false
   end
 
   def cell_in(dir)
