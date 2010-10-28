@@ -4,7 +4,17 @@ class Side
   class Cell
     def initialize
       @open = false
+
+      @left = nil
+      @right = nil
+      @up = nil
+      @down = nil
     end
+
+    attr_accessor :left
+    attr_accessor :right
+    attr_accessor :up
+    attr_accessor :down
 
     def open?
       return @open
@@ -12,6 +22,7 @@ class Side
 
     def open
       @open = true
+      self
     end
 
     def to_s
@@ -20,50 +31,12 @@ class Side
     end
   end
 
-  class Walker
-    def initialize(maze, x, y)
-      @maze = maze
-      @cell = nil
-      go_to(x, y)
-    end
-
-    def current
-      @cell
-    end
-
-    def go_left
-      go_to(@x - 1, @y)
-    end
-
-    def go_right
-      go_to(@x + 1, @y)
-    end
-
-    def go_up
-      go_to(@x, @y - 1)
-    end
-
-    def go_down
-      go_to(@x, @y + 1)
-    end
-
-    def go_to(x, y)
-      @cell = @maze.cell(x, y)
-      @x = x
-      @y = y
-      @cell
-    end
-
-    def to_s
-      "Walker: #{@x} #{@y}"
-    end
-  end
-
   def initialize(name, size)
     @name = name
 
     @maze = []
 
+    # populate
     size.times do
       row = []
       size.times do
@@ -71,15 +44,22 @@ class Side
       end
       @maze << row
     end
-  end
 
-  def walk(from_x, from_y)
-    Walker.new(self, from_x, from_y)
+    # link
+    @maze.each_with_index do |row, row_no|
+      row.each_with_index do |cell, col_no|
+        cell.left = cell(col_no - 1, row_no)
+        cell.right = cell(col_no + 1, row_no)
+        cell.up = cell(col_no, row_no - 1)
+        cell.down = cell(col_no, row_no + 1)
+      end
+    end
   end
 
   def cell(x, y)
     return nil if x < 0 or y < 0
-    (row = @maze[y] and row[x]) or raise "out of maze at: #{x} #{y}"
+    row = @maze[y] or return nil
+    row[x] or return nil
   end
 
   def to_s
@@ -103,19 +83,14 @@ class Side
 end
 
 s1 = Side.new(1, 7)
-w1 = s1.walk(0, 0)
 
-puts s1, w1
+puts s1
 
-#puts s1.cell(10,0)
-#puts s1.cell(0,10)
-#puts s1.cell(0,0)
+puts s1.cell(10,0)
+puts s1.cell(0,10)
+puts s1.cell(0,0)
 
-w1.current.open
-w1.go_right.open
-w1.go_right.open
-w1.go_right.open
-w1.go_down.open
+puts s1.cell(0,0).open.right.open.right.open.down.open.right.open
 
 puts s1
 
