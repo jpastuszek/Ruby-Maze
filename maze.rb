@@ -186,25 +186,25 @@ class RecursiveBacktracker
 
   def find_move(cell)
     dirs = Dirs.new
-    puts "finding move"
+    #puts "finding move"
     loop do
       dir = dirs.rand or break
 
-      puts "trying dir: #{dir}"
+      #puts "trying dir: #{dir}"
 
       c = cell.send(dir)
-      p c
+      #p c
       next unless c
 
       next if c.border?
       next if c.carved?
       next unless c.unmade?
 
-      puts "found move to"
+      #puts "found move to"
       return c
     end
 
-    puts "move not found"
+    #puts "move not found"
     return false
   end
 
@@ -215,7 +215,7 @@ end
 
 s1 = Side.new(1, 40)
 
-puts s1
+#puts s1
 
 begin
   RecursiveBacktracker.new(1, s1.cell(3, 0))
