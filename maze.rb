@@ -162,7 +162,9 @@ class RecursiveBacktracker
     end
   end
 
-  def initialize(cell)
+  def initialize(seed, cell)
+    Kernel.srand(seed)
+
     stack = []
 
     cell.carve
@@ -216,7 +218,7 @@ s1 = Side.new(1, 40)
 puts s1
 
 begin
-  RecursiveBacktracker.new(s1.cell(3, 0))
+  RecursiveBacktracker.new(1, s1.cell(3, 0))
 ensure
   puts s1
 end
