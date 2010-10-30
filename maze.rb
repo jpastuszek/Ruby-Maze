@@ -471,6 +471,6 @@ end
 
 100.times do |seed|
   s = gen(seed)
-  SpaceRenderer.new(s).write("sourface_%04d.png" % seed)
+  SpaceRenderer.new(s, 16).write("sourface_%04d.png" % seed)
 end
 
