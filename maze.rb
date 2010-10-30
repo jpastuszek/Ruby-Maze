@@ -39,7 +39,8 @@ class Space
 
   class Cell
     def initialize
-      @carved = nil
+      @carved = false
+      @marked = false
 
       @left = nil
       @right = nil
@@ -47,10 +48,10 @@ class Space
       @down = nil
     end
 
-    attr_reader :left
-    attr_reader :right
-    attr_reader :up
-    attr_reader :down
+    attr_accessor :left
+    attr_accessor :right
+    attr_accessor :up
+    attr_accessor :down
 
     def link(left, right, up, down)
       @left = (left or BorderCell.new(self))
@@ -86,6 +87,14 @@ class Space
       return no
     end
 
+    def marked?
+      return @marked
+    end
+
+    def mark
+      #@marked = true
+    end
+
     def inspect
       return "UnlikedCell" unless @left and @right and @up and @down
       out = "#{self.class.name} (neighbors_carved #{neighbors_carved} walls):\n"
@@ -96,6 +105,10 @@ class Space
     end
 
     def to_s
+      if marked?
+        return "**" if carved? 
+        return "<>"
+      end 
       return ".." if carved? 
       return "[]"
     end
@@ -269,21 +282,108 @@ def gen_side(space, x, y, size)
   space.del_cell(x + size - 1, y + size / 2)
 end
 
-s1 = Space.new(1, 40) do |space|
-  gen_side(space, 8, 0, 7)
-  gen_side(space, 0, 8, 7)
-  gen_side(space, 8, 8, 7)
-  gen_side(space, 16, 8, 7)
-  gen_side(space, 24, 8, 7)
-  gen_side(space, 8, 16, 7)
+def hor_link(left, right)
+  left.right = right
+  right.left = left
+
+  right.mark
+  left.mark
 end
 
-puts s1
+def vert_link(up, down)
+  up.down = down
+  down.up = up
 
-begin
-  RecursiveBacktracker.new(1, s1.cell(10, 10))
-ensure
-  puts s1
+  up.mark
+  down.mark
 end
 
+def up_left_link(up, left)
+  up.up = left
+  left.left = up
+
+  up.mark
+  left.mark
+end
+
+def down_left_link(down, left)
+  down.down = left
+  left.left = down
+
+  down.mark
+  left.mark
+end
+
+def right_down_link(right, down)
+  right.right = down
+  down.down = right
+
+  right.mark
+  down.mark
+end
+
+def right_up_link(right, up)
+  right.right = up
+  up.up = right
+
+  right.mark
+  up.mark
+end
+
+def down_link(c1, c2)
+  c1.down = c2
+  c2.down = c1
+
+  c1.mark
+  c2.mark
+end
+
+def up_link(c1, c2)
+  c1.up = c2
+  c2.up = c1
+
+  c1.mark
+  c2.mark
+end
+
+def gen(seed)
+  s1 = Space.new(seed, 31) do |space|
+    gen_side(space, 8, 0, 7)
+    gen_side(space, 0, 8, 7)
+    gen_side(space, 8, 8, 7)
+    gen_side(space, 16, 8, 7)
+    gen_side(space, 24, 8, 7)
+    gen_side(space, 8, 16, 7)
+
+  end
+
+  hor_link(s1.cell(5, 11), s1.cell(9, 11))
+  hor_link(s1.cell(13, 11), s1.cell(17, 11))
+  hor_link(s1.cell(21, 11), s1.cell(25, 11))
+  hor_link(s1.cell(29, 11), s1.cell(1, 11))
+
+  vert_link(s1.cell(11, 5), s1.cell(11, 9))
+  vert_link(s1.cell(11, 13), s1.cell(11, 17))
+
+  down_link(s1.cell(11, 21), s1.cell(27, 13))
+  up_link(s1.cell(11, 1), s1.cell(27, 9))
+
+  up_left_link(s1.cell(3, 9), s1.cell(9, 3))
+
+  down_left_link(s1.cell(3, 13), s1.cell(9, 19))
+
+  right_down_link(s1.cell(13, 19), s1.cell(19, 13))
+  right_up_link(s1.cell(13, 3), s1.cell(19, 9))
+
+  #puts s1
+  begin
+    RecursiveBacktracker.new(seed, s1.cell(11, 11))
+  ensure
+    puts s1
+  end
+end
+
+20.times do |seed|
+  gen(seed)
+end
 
