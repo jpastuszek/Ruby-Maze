@@ -1,6 +1,6 @@
 #!/bin/env ruby
 
-class Side
+class Space
   class BorderCell
     def initialize(neighbor)
       @neighbor = neighbor
@@ -154,7 +154,7 @@ class Side
   end
 
   def to_s
-    out = "Side #{@name}:\n"
+    out = "#{self.class.name} #{@name}:\n"
 
     out << "  "
     @maze[0].each_with_index do |cell, i|
@@ -247,7 +247,7 @@ class RecursiveBacktracker
   end
 end
 
-s1 = Side.new(1, 40) do |m|
+s1 = Space.new(1, 40) do |m|
   20.times do |row|
     20.times do |col|
       m.make_cell(row + 10, col + 10)
