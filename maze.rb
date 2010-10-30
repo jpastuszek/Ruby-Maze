@@ -41,16 +41,23 @@ class Side
     def initialize
       @carved = nil
 
-      @left = BorderCell.new(self)
-      @right = BorderCell.new(self)
-      @up = BorderCell.new(self)
-      @down = BorderCell.new(self)
+      @left = nil
+      @right = nil
+      @up = nil
+      @down = nil
     end
 
-    attr_accessor :left
-    attr_accessor :right
-    attr_accessor :up
-    attr_accessor :down
+    attr_reader :left
+    attr_reader :right
+    attr_reader :up
+    attr_reader :down
+
+    def link(left, right, up, down)
+      @left = (left or BorderCell.new(self))
+      @right = (right or BorderCell.new(self))
+      @up = (up or BorderCell.new(self))
+      @down = (down or BorderCell.new(self))
+    end
 
     def border?
       return false
@@ -98,7 +105,11 @@ class Side
 
     @maze = []
 
-    # populate
+    populate(size)
+    link
+  end
+
+  def populate(size)
     size.times do
       row = []
       size.times do
@@ -106,14 +117,19 @@ class Side
       end
       @maze << row
     end
+  end
 
-    # link
+  def link
     @maze.each_with_index do |row, row_no|
       row.each_with_index do |cell, col_no|
-        cell.left = (cell(col_no - 1, row_no) or BorderCell.new(cell))
-        cell.right = (cell(col_no + 1, row_no) or BorderCell.new(cell))
-        cell.up = (cell(col_no, row_no - 1) or BorderCell.new(cell))
-        cell.down = (cell(col_no, row_no + 1) or BorderCell.new(cell))
+        if cell and not cell.border?
+          left = cell(col_no - 1, row_no)
+          right = cell(col_no + 1, row_no)
+          up = cell(col_no, row_no - 1)
+          down = cell(col_no, row_no + 1)
+
+          cell.link(left, right, up, down)
+        end
       end
     end
   end
