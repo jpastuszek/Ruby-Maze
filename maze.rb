@@ -87,6 +87,7 @@ class Side
     end
 
     def inspect
+      return "UnlikedCell" unless @left and @right and @up and @down
       out = "#{self.class.name} (neighbors_carved #{neighbors_carved} walls):\n"
       out << "  #{up.to_s or "00"}  \n"
       out << "#{left.to_s or "00"}#{to_s}#{right.to_s or "00"}\n"
@@ -106,6 +107,9 @@ class Side
     @maze = []
 
     populate(size)
+
+    yield self
+
     link
   end
 
@@ -113,7 +117,7 @@ class Side
     size.times do
       row = []
       size.times do
-        row << Cell.new
+        row << nil
       end
       @maze << row
     end
@@ -140,6 +144,15 @@ class Side
     row[x] or return nil
   end
 
+  def make_cell(x, y)
+    raise "negative space index" if x < 0 or y < 0 
+
+    row = @maze[y] or raise "out of rows"
+    raise "out of colls" if x >= row.length
+
+    row[x] = Cell.new
+  end
+
   def to_s
     out = "Side #{@name}:\n"
 
@@ -152,7 +165,11 @@ class Side
     @maze.each_with_index do |row, i|
       out << "#{i} "
       row.each do |cell|
-        out << cell.to_s
+        if cell
+          out << cell.to_s
+        else
+          out << "  "
+        end
       end
       out << "\n"
     end
@@ -179,6 +196,7 @@ class RecursiveBacktracker
   end
 
   def initialize(seed, cell)
+    raise "nil start cell" unless cell
     Kernel.srand(seed)
 
     stack = []
@@ -229,12 +247,18 @@ class RecursiveBacktracker
   end
 end
 
-s1 = Side.new(1, 40)
+s1 = Side.new(1, 40) do |m|
+  20.times do |row|
+    20.times do |col|
+      m.make_cell(row + 10, col + 10)
+    end
+  end
+end
 
-#puts s1
+puts s1
 
 begin
-  RecursiveBacktracker.new(1, s1.cell(3, 0))
+  RecursiveBacktracker.new(1, s1.cell(10, 10))
 ensure
   puts s1
 end
