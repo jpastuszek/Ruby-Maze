@@ -48,12 +48,15 @@ class Space
       @right = nil
       @up = nil
       @down = nil
+
+      @distance = 0
     end
 
     attr_accessor :left
     attr_accessor :right
     attr_accessor :up
     attr_accessor :down
+    attr_accessor :distance
 
     def link(left, right, up, down)
       @left = (left or BorderCell.new(self))
@@ -179,6 +182,14 @@ class Space
     row[x] = c
   end
 
+  def each_cell
+    @size.times do |x|
+      @size.times do |y|
+        yield cell(x, y), x, y
+      end
+    end
+  end
+
   def to_s
     out = "#{self.class.name} #{@name}:\n"
 
@@ -211,26 +222,44 @@ class SpaceRenderer
     @surface = Cairo::ImageSurface.new(@format, @width, @height)
     @context = Cairo::Context.new(@surface)
 
-    @context.set_source_rgb(1, 1, 1)
+    @context.set_source_rgb(0, 0, 0)
     @context.rectangle(0, 0, @width, @height)
     @context.fill
 
-    set_color(1, 0, 0)
-    set_pixel(1, 10)
+    @max_distance = 80
 
-    @width.times do |x|
-      @height.times do |y|
-        c = space.cell(x, y)
-        next unless c
-        if c.carved?
-          set_color(0, 0, 0)
-        else
-          set_color(1, 0, 0)
+    #space.each_cell do |c, x, y|
+      #next unless c
+      #d = c.distance
+      #@max_distance = d if d > @max_distance
+    #end
+
+    #puts "max distance: #{@max_distance}"
+
+    space.each_cell do |c, x, y|
+      c = space.cell(x, y)
+      next unless c
+      if c.carved?
+        df = dist_factor(c.distance) * 2 # 0..2
+
+        r = df
+        g = 0
+        if r > 1
+          g = r - 1
+          r = 1
         end
 
-        set_pixel(x, y)
+        set_color(r, g, 1)
+      else
+        set_color(0.8, 0, 0)
       end
+
+      set_pixel(x, y)
     end
+  end
+
+  def dist_factor(distance)
+    distance.to_f / @max_distance # from 0 to 1
   end
 
   def set_color(r, g, b)
@@ -270,6 +299,7 @@ class RecursiveBacktracker
     raise "nil start cell" unless cell
     Kernel.srand(seed)
 
+    distance = 0
     stack = []
 
     cell.carve
@@ -280,12 +310,15 @@ class RecursiveBacktracker
         next_cell = find_move(cell) or break
 
         next_cell.carve
+        next_cell.distance = distance
         stack << cell
+        distance += 1
 
         cell = next_cell
       end
 
       cell = stack.pop
+      distance -= 1
     end
   end
 
@@ -435,8 +468,8 @@ def gen(seed)
   s1
 end
 
-1.times do |seed|
+20.times do |seed|
   s = gen(seed)
-  SpaceRenderer.new(s).write("sourface_#{seed}.png")
+  SpaceRenderer.new(s).write("sourface_%04d.png" % seed)
 end
 
