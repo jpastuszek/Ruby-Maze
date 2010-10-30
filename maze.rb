@@ -215,9 +215,10 @@ class Space
 end
 
 class SpaceRenderer
-  def initialize(space, format = Cairo::FORMAT_ARGB32)
-    @width = space.size
-    @height = space.size
+  def initialize(space, zoom = 6, format = Cairo::FORMAT_ARGB32)
+    @zoom = zoom
+    @width = space.size * @zoom
+    @height = space.size * @zoom
 
     @surface = Cairo::ImageSurface.new(@format, @width, @height)
     @context = Cairo::Context.new(@surface)
@@ -267,7 +268,7 @@ class SpaceRenderer
   end
 
   def set_pixel(x, y)
-    @context.rectangle(x, y, 1, 1)
+    @context.rectangle(x * @zoom, y * @zoom,  * @zoom, @zoom)
     @context.fill
   end
 
@@ -468,7 +469,7 @@ def gen(seed)
   s1
 end
 
-20.times do |seed|
+100.times do |seed|
   s = gen(seed)
   SpaceRenderer.new(s).write("sourface_%04d.png" % seed)
 end
