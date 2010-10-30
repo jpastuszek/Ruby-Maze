@@ -166,12 +166,12 @@ class Space
 
     out << "  "
     @maze[0].each_with_index do |cell, i|
-      out << "#{i} "
+      out << "%2d" % i
     end
     out << "\n"
 
     @maze.each_with_index do |row, i|
-      out << "#{i} "
+      out << "%2d " % i
       row.each do |cell|
         if cell
           out << cell.to_s
