@@ -1,5 +1,7 @@
 #!/bin/env ruby
 
+require 'cairo'
+
 class Space
   class BorderCell
     def initialize(neighbor)
@@ -109,27 +111,30 @@ class Space
         return "**" if carved? 
         return "<>"
       end 
-      return ".." if carved? 
-      return "[]"
+      return "[]" if carved? 
+      return "  "
     end
   end
 
+  attr_reader :size
+
   def initialize(name, size)
     @name = name
+    @size = size
 
     @maze = []
 
-    populate(size)
+    populate
 
     yield self
 
     link
   end
 
-  def populate(size)
-    size.times do
+  def populate
+    @size.times do
       row = []
-      size.times do
+      @size.times do
         row << nil
       end
       @maze << row
@@ -189,7 +194,7 @@ class Space
         if cell
           out << cell.to_s
         else
-          out << "  "
+          out << "##"
         end
       end
       out << "\n"
@@ -197,6 +202,51 @@ class Space
     out
   end
 end
+
+class SpaceRenderer
+  def initialize(space, format = Cairo::FORMAT_ARGB32)
+    @width = space.size
+    @height = space.size
+
+    @surface = Cairo::ImageSurface.new(@format, @width, @height)
+    @context = Cairo::Context.new(@surface)
+
+    @context.set_source_rgb(1, 1, 1)
+    @context.rectangle(0, 0, @width, @height)
+    @context.fill
+
+    set_color(1, 0, 0)
+    set_pixel(1, 10)
+
+    @width.times do |x|
+      @height.times do |y|
+        c = space.cell(x, y)
+        next unless c
+        if c.carved?
+          set_color(0, 0, 0)
+        else
+          set_color(1, 0, 0)
+        end
+
+        set_pixel(x, y)
+      end
+    end
+  end
+
+  def set_color(r, g, b)
+    @context.set_source_rgb(r, g, b)
+  end
+
+  def set_pixel(x, y)
+    @context.rectangle(x, y, 1, 1)
+    @context.fill
+  end
+
+  def write(file)
+    @surface.write_to_png(file)
+  end
+end
+
 
 class RecursiveBacktracker
   class Dirs
@@ -381,9 +431,12 @@ def gen(seed)
   ensure
     puts s1
   end
+
+  s1
 end
 
-20.times do |seed|
-  gen(seed)
+1.times do |seed|
+  s = gen(seed)
+  SpaceRenderer.new(s).write("sourface_#{seed}.png")
 end
 
