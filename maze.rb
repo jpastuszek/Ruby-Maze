@@ -145,12 +145,20 @@ class Space
   end
 
   def make_cell(x, y)
+    set_cell(x, y, Cell.new)
+  end
+
+  def del_cell(x, y)
+    set_cell(x, y, nil)
+  end
+
+  def set_cell(x, y, c)
     raise "negative space index" if x < 0 or y < 0 
 
     row = @maze[y] or raise "out of rows"
     raise "out of colls" if x >= row.length
 
-    row[x] = Cell.new
+    row[x] = c
   end
 
   def to_s
@@ -247,12 +255,27 @@ class RecursiveBacktracker
   end
 end
 
-s1 = Space.new(1, 40) do |m|
-  20.times do |row|
-    20.times do |col|
-      m.make_cell(row + 10, col + 10)
+def gen_side(space, x, y, size)
+  size.times do |row|
+    size.times do |col|
+      space.make_cell(x + row, y + col)
     end
   end
+
+  space.del_cell(x + size / 2, y + 0)
+  space.del_cell(x + size / 2, y + size - 1)
+
+  space.del_cell(x + 0, y + size / 2)
+  space.del_cell(x + size - 1, y + size / 2)
+end
+
+s1 = Space.new(1, 40) do |space|
+  gen_side(space, 8, 0, 7)
+  gen_side(space, 0, 8, 7)
+  gen_side(space, 8, 8, 7)
+  gen_side(space, 16, 8, 7)
+  gen_side(space, 24, 8, 7)
+  gen_side(space, 8, 16, 7)
 end
 
 puts s1
