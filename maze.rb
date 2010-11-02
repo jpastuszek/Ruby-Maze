@@ -31,7 +31,7 @@ class Space
     end
 
     def to_s
-      "##"
+      "__"
     end
 
     def inspect
@@ -97,7 +97,7 @@ class Space
     end
 
     def mark
-      #@marked = true
+      @marked = true
     end
 
     def inspect
@@ -111,14 +111,15 @@ class Space
 
     def to_s
       if marked?
-        return "**" if carved? 
+        return "++" if carved? 
         return "<>"
       end 
-      return "[]" if carved? 
-      return "  "
+      return "  " if carved? 
+      return "##"
     end
   end
 
+  # Space
   attr_reader :size
 
   def initialize(name, size)
@@ -205,7 +206,7 @@ class Space
         if cell
           out << cell.to_s
         else
-          out << "##"
+          out << ".."
         end
       end
       out << "\n"
@@ -250,7 +251,12 @@ class SpaceRenderer
           r = 1
         end
 
-        set_color(r, g, 1)
+        if c.marked?
+          set_color(r, 1, g)
+        else
+          set_color(0, 0, 1)
+        end
+
       else
         set_color(0.8, 0, 0)
       end
@@ -301,6 +307,8 @@ class RecursiveBacktracker
     Kernel.srand(seed)
 
     distance = 0
+    max_distance = 0
+    max_distance_path = nil
     stack = []
 
     cell.carve
@@ -315,11 +323,20 @@ class RecursiveBacktracker
         stack << cell
         distance += 1
 
+        if distance > max_distance
+          max_distance = distance
+          max_distance_path = stack.dup
+        end
+
         cell = next_cell
       end
 
       cell = stack.pop
       distance -= 1
+    end
+
+    max_distance_path.each do |cell|
+      cell.mark
     end
   end
 
@@ -370,64 +387,64 @@ def hor_link(left, right)
   left.right = right
   right.left = left
 
-  right.mark
-  left.mark
+  #right.mark
+  #left.mark
 end
 
 def vert_link(up, down)
   up.down = down
   down.up = up
 
-  up.mark
-  down.mark
+  #up.mark
+  #down.mark
 end
 
 def up_left_link(up, left)
   up.up = left
   left.left = up
 
-  up.mark
-  left.mark
+  #up.mark
+  #left.mark
 end
 
 def down_left_link(down, left)
   down.down = left
   left.left = down
 
-  down.mark
-  left.mark
+  #down.mark
+  #left.mark
 end
 
 def right_down_link(right, down)
   right.right = down
   down.down = right
 
-  right.mark
-  down.mark
+  #right.mark
+  #down.mark
 end
 
 def right_up_link(right, up)
   right.right = up
   up.up = right
 
-  right.mark
-  up.mark
+  #right.mark
+  #up.mark
 end
 
 def down_link(c1, c2)
   c1.down = c2
   c2.down = c1
 
-  c1.mark
-  c2.mark
+  #c1.mark
+  #c2.mark
 end
 
 def up_link(c1, c2)
   c1.up = c2
   c2.up = c1
 
-  c1.mark
-  c2.mark
+  #c1.mark
+  #c2.mark
 end
 
 def gen(seed)
@@ -461,7 +478,7 @@ def gen(seed)
 
   #puts s1
   begin
-    RecursiveBacktracker.new(seed, s1.cell(11, 11))
+    r = RecursiveBacktracker.new(seed, s1.cell(11, 11))
   ensure
     puts s1
   end
@@ -469,8 +486,9 @@ def gen(seed)
   s1
 end
 
-100.times do |seed|
+#100.times do |seed|
+seed = 6
   s = gen(seed)
   SpaceRenderer.new(s, 16).write("sourface_%04d.png" % seed)
-end
+#end
 
