@@ -6,6 +6,7 @@ class Space
 
   # Space
   attr_reader :size
+  attr_reader :name
 
   def initialize(name, size)
     @name = name
@@ -300,8 +301,8 @@ class CubeSpaceBase < Space
 end
 
 class CubeSpace < CubeSpaceBase
-  def initialize(seed)
-    super(seed, 31) do
+  def initialize(size)
+    super(size, 31) do
       gen_side(8, 0, 7)
       gen_side(0, 8, 7)
       gen_side(8, 8, 7)
@@ -331,8 +332,8 @@ class CubeSpace < CubeSpaceBase
 end
 
 class FlatCubeSpace < CubeSpaceBase
-  def initialize(seed)
-    super(seed, 31) do
+  def initialize(size)
+    super(size, 31) do
       gen_side(0, 0, 7)
       gen_side(8, 0, 7)
       gen_side(16, 0, 7)
@@ -516,19 +517,19 @@ class RecursiveBacktracker
   end
 end
 
-def trac_and_render(seed, space, name)
+def trac_and_render(seed, space)
   RecursiveBacktracker.run(seed, space.cell(11, 11))
-  SpaceRenderer.new(space, 16).write("#{name}_%04d.png" % seed)
+  SpaceRenderer.new(space, 16).write(space.name + ".png")
 end
 
 #100.times do |seed|
 seed = 6
-  s = CubeSpace.new(seed)
-  trac_and_render(seed, s, "cube_space")
+  s = CubeSpace.new("cube_space_%04d" % seed)
+  trac_and_render(seed, s)
 
-  s = FlatCubeSpace.new(seed)
+  s = FlatCubeSpace.new("flat_cube_space_%04d" % seed)
   #puts s
-  trac_and_render(seed, s, "flat_cube_space")
+  trac_and_render(seed, s)
   puts s
 #end
 
