@@ -3,6 +3,62 @@
 require 'cairo'
 
 class Space
+
+  # Space
+  attr_reader :size
+
+  def initialize(name, size)
+    @name = name
+    @size = size
+
+    @maze = []
+
+    populate
+
+    yield
+
+    link
+  end
+
+  def cell(x, y)
+    return nil if x < 0 or y < 0
+    row = @maze[y] or return nil
+    row[x] or return nil
+  end
+
+  def each_cell
+    @size.times do |x|
+      @size.times do |y|
+        yield cell(x, y), x, y
+      end
+    end
+  end
+
+  def to_s
+    out = "#{self.class.name} #{@name}:\n"
+
+    out << "  "
+    @maze[0].each_with_index do |cell, i|
+      out << "%-2d" % i
+    end
+    out << "\n"
+
+    @maze.each_with_index do |row, i|
+      out << "%2d" % i
+      row.each do |cell|
+        if cell
+          out << cell.to_s
+        else
+          out << ".."
+        end
+      end
+      out << "\n"
+    end
+    out
+  end
+
+  private
+
   class BorderCell
     def initialize(neighbor)
       @neighbor = neighbor
@@ -118,23 +174,6 @@ class Space
       return "##"
     end
   end
-
-  # Space
-  attr_reader :size
-
-  def initialize(name, size)
-    @name = name
-    @size = size
-
-    @maze = []
-
-    populate
-
-    yield self
-
-    link
-  end
-
   def populate
     @size.times do
       row = []
@@ -160,12 +199,6 @@ class Space
     end
   end
 
-  def cell(x, y)
-    return nil if x < 0 or y < 0
-    row = @maze[y] or return nil
-    row[x] or return nil
-  end
-
   def make_cell(x, y)
     set_cell(x, y, Cell.new)
   end
@@ -182,36 +215,115 @@ class Space
 
     row[x] = c
   end
+end
 
-  def each_cell
-    @size.times do |x|
-      @size.times do |y|
-        yield cell(x, y), x, y
-      end
+class CubeSpace < Space
+  def initialize(seed)
+    super(seed, 31) do
+      gen_side(8, 0, 7)
+      gen_side(0, 8, 7)
+      gen_side(8, 8, 7)
+      gen_side(16, 8, 7)
+      gen_side(24, 8, 7)
+      gen_side(8, 16, 7)
     end
+
+    hor_link(cell(5, 11), cell(9, 11))
+    hor_link(cell(13, 11), cell(17, 11))
+    hor_link(cell(21, 11), cell(25, 11))
+    hor_link(cell(29, 11), cell(1, 11))
+
+    vert_link(cell(11, 5), cell(11, 9))
+    vert_link(cell(11, 13), cell(11, 17))
+
+    down_link(cell(11, 21), cell(27, 13))
+    up_link(cell(11, 1), cell(27, 9))
+
+    up_left_link(cell(3, 9), cell(9, 3))
+
+    down_left_link(cell(3, 13), cell(9, 19))
+
+    right_down_link(cell(13, 19), cell(19, 13))
+    right_up_link(cell(13, 3), cell(19, 9))
+
   end
 
-  def to_s
-    out = "#{self.class.name} #{@name}:\n"
-
-    out << "  "
-    @maze[0].each_with_index do |cell, i|
-      out << "%-2d" % i
-    end
-    out << "\n"
-
-    @maze.each_with_index do |row, i|
-      out << "%2d" % i
-      row.each do |cell|
-        if cell
-          out << cell.to_s
-        else
-          out << ".."
-        end
+  def gen_side(x, y, size)
+    size.times do |row|
+      size.times do |col|
+        make_cell(x + row, y + col)
       end
-      out << "\n"
     end
-    out
+
+    del_cell(x + size / 2, y + 0)
+    del_cell(x + size / 2, y + size - 1)
+
+    del_cell(x + 0, y + size / 2)
+    del_cell(x + size - 1, y + size / 2)
+  end
+
+  def hor_link(left, right)
+    left.right = right
+    right.left = left
+
+    #right.mark
+    #left.mark
+  end
+
+  def vert_link(up, down)
+    up.down = down
+    down.up = up
+
+    #up.mark
+    #down.mark
+  end
+
+  def up_left_link(up, left)
+    up.up = left
+    left.left = up
+
+    #up.mark
+    #left.mark
+  end
+
+  def down_left_link(down, left)
+    down.down = left
+    left.left = down
+
+    #down.mark
+    #left.mark
+  end
+
+  def right_down_link(right, down)
+    right.right = down
+    down.down = right
+
+    #right.mark
+    #down.mark
+  end
+
+  def right_up_link(right, up)
+    right.right = up
+    up.up = right
+
+    #right.mark
+    #up.mark
+  end
+
+  def down_link(c1, c2)
+    c1.down = c2
+    c2.down = c1
+
+    #c1.mark
+    #c2.mark
+  end
+
+  def up_link(c1, c2)
+    c1.up = c2
+    c2.up = c1
+
+    #c1.mark
+    #c2.mark
   end
 end
 
@@ -274,7 +386,7 @@ class SpaceRenderer
   end
 
   def set_pixel(x, y)
-    @context.rectangle(x * @zoom, y * @zoom,  * @zoom, @zoom)
+    @context.rectangle(x * @zoom, y * @zoom, @zoom, @zoom)
     @context.fill
   end
 
@@ -302,7 +414,7 @@ class RecursiveBacktracker
     end
   end
 
-  def initialize(seed, cell)
+  def self.run(seed, cell)
     raise "nil start cell" unless cell
     Kernel.srand(seed)
 
@@ -340,7 +452,9 @@ class RecursiveBacktracker
     end
   end
 
-  def find_move(cell)
+  private
+
+  def self.find_move(cell)
     dirs = Dirs.new
     #puts "finding move"
     loop do
@@ -364,131 +478,22 @@ class RecursiveBacktracker
     return false
   end
 
-  def cell_in(dir)
+  def self.cell_in(dir)
     c.send(dir)
   end
 end
 
-def gen_side(space, x, y, size)
-  size.times do |row|
-    size.times do |col|
-      space.make_cell(x + row, y + col)
-    end
-  end
-
-  space.del_cell(x + size / 2, y + 0)
-  space.del_cell(x + size / 2, y + size - 1)
-
-  space.del_cell(x + 0, y + size / 2)
-  space.del_cell(x + size - 1, y + size / 2)
-end
-
-def hor_link(left, right)
-  left.right = right
-  right.left = left
-
-  #right.mark
-  #left.mark
-end
-
-def vert_link(up, down)
-  up.down = down
-  down.up = up
-
-  #up.mark
-  #down.mark
-end
-
-def up_left_link(up, left)
-  up.up = left
-  left.left = up
-
-  #up.mark
-  #left.mark
-end
-
-def down_left_link(down, left)
-  down.down = left
-  left.left = down
-
-  #down.mark
-  #left.mark
-end
-
-def right_down_link(right, down)
-  right.right = down
-  down.down = right
-
-  #right.mark
-  #down.mark
-end
-
-def right_up_link(right, up)
-  right.right = up
-  up.up = right
-
-  #right.mark
-  #up.mark
-end
-
-def down_link(c1, c2)
-  c1.down = c2
-  c2.down = c1
-
-  #c1.mark
-  #c2.mark
-end
-
-def up_link(c1, c2)
-  c1.up = c2
-  c2.up = c1
-
-  #c1.mark
-  #c2.mark
-end
-
-def gen(seed)
-  s1 = Space.new(seed, 31) do |space|
-    gen_side(space, 8, 0, 7)
-    gen_side(space, 0, 8, 7)
-    gen_side(space, 8, 8, 7)
-    gen_side(space, 16, 8, 7)
-    gen_side(space, 24, 8, 7)
-    gen_side(space, 8, 16, 7)
-
-  end
-
-  hor_link(s1.cell(5, 11), s1.cell(9, 11))
-  hor_link(s1.cell(13, 11), s1.cell(17, 11))
-  hor_link(s1.cell(21, 11), s1.cell(25, 11))
-  hor_link(s1.cell(29, 11), s1.cell(1, 11))
-
-  vert_link(s1.cell(11, 5), s1.cell(11, 9))
-  vert_link(s1.cell(11, 13), s1.cell(11, 17))
-
-  down_link(s1.cell(11, 21), s1.cell(27, 13))
-  up_link(s1.cell(11, 1), s1.cell(27, 9))
-
-  up_left_link(s1.cell(3, 9), s1.cell(9, 3))
-
-  down_left_link(s1.cell(3, 13), s1.cell(9, 19))
-
-  right_down_link(s1.cell(13, 19), s1.cell(19, 13))
-  right_up_link(s1.cell(13, 3), s1.cell(19, 9))
-
-  #puts s1
-  begin
-    r = RecursiveBacktracker.new(seed, s1.cell(11, 11))
-  ensure
-    puts s1
-  end
-
-  s1
-end
 
 #100.times do |seed|
 seed = 6
-  s = gen(seed)
+  s = CubeSpace.new(seed)
+  #puts s
+  begin
+    RecursiveBacktracker.run(seed, s.cell(11, 11))
+  ensure
+    puts s
+  end
+
   SpaceRenderer.new(s, 16).write("sourface_%04d.png" % seed)
 #end
 
