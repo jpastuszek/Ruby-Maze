@@ -301,8 +301,8 @@ class CubeSpaceBase < Space
 end
 
 class CubeSpace < CubeSpaceBase
-  def initialize(size)
-    super(size, 31) do
+  def initialize(name)
+    super(name, 31) do
       gen_side(8, 0, 7)
       gen_side(0, 8, 7)
       gen_side(8, 8, 7)
@@ -332,8 +332,8 @@ class CubeSpace < CubeSpaceBase
 end
 
 class FlatCubeSpace < CubeSpaceBase
-  def initialize(size)
-    super(size, 31) do
+  def initialize(name)
+    super(name, 31) do
       gen_side(0, 0, 7)
       gen_side(8, 0, 7)
       gen_side(16, 0, 7)
@@ -359,6 +359,57 @@ class FlatCubeSpace < CubeSpaceBase
     vert_link(cell(19, 13), cell(19, 1))
     vert_link(cell(19, 5), cell(19, 9))
   end
+end
+
+class SixRoomSpace < CubeSpaceBase
+	def initialize(name)
+		super(name, 31) do
+			gen_room(1, 1, 7)
+			gen_room(9, 1, 7)
+			gen_room(17, 1, 7)
+
+			gen_room(1, 9, 7)
+			gen_room(9, 9, 7)
+			gen_room(17, 9, 7)
+
+			make_cell(0, 4)
+			make_cell(8, 4)
+			make_cell(16, 4)
+			make_cell(24, 4)
+
+			make_cell(0, 12)
+			make_cell(8, 12)
+			make_cell(16, 12)
+			make_cell(24, 12)
+
+			make_cell(4, 0)
+			make_cell(12, 0)
+			make_cell(20, 0)
+
+			make_cell(4, 8)
+			make_cell(12, 8)
+			make_cell(20, 8)
+
+			make_cell(4, 16)
+			make_cell(12, 16)
+			make_cell(20, 16)
+		end
+
+		hor_link(cell(24, 4), cell(0, 4))
+		hor_link(cell(24, 12), cell(0, 12))
+
+		vert_link(cell(4, 16), cell(4, 0))
+		vert_link(cell(12, 16), cell(12, 0))
+		vert_link(cell(20, 16), cell(20, 0))
+	end
+
+	def gen_room(x, y, size)
+		size.times do |row|
+		  size.times do |col|
+			make_cell(x + row, y + col)
+		  end
+		end
+	end
 end
 
 class SpaceRenderer
@@ -517,19 +568,23 @@ class RecursiveBacktracker
   end
 end
 
-def trac_and_render(seed, space)
-  RecursiveBacktracker.run(seed, space.cell(11, 11))
+def trac_and_render(seed, space, x, y)
+  RecursiveBacktracker.run(seed, space.cell(x, y))
   SpaceRenderer.new(space, 16).write(space.name + ".png")
 end
 
 #100.times do |seed|
 seed = 6
   s = CubeSpace.new("cube_space_%04d" % seed)
-  trac_and_render(seed, s)
+  trac_and_render(seed, s, 11, 11)
 
   s = FlatCubeSpace.new("flat_cube_space_%04d" % seed)
   #puts s
-  trac_and_render(seed, s)
+  trac_and_render(seed, s, 11, 11)
+
+  seed += 2
+  s = SixRoomSpace.new("six_room_space_%04d" % seed)
+  trac_and_render(seed, s, 12, 4)
   puts s
 #end
 
