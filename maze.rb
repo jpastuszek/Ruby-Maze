@@ -217,36 +217,8 @@ class Space
   end
 end
 
-class CubeSpace < Space
-  def initialize(seed)
-    super(seed, 31) do
-      gen_side(8, 0, 7)
-      gen_side(0, 8, 7)
-      gen_side(8, 8, 7)
-      gen_side(16, 8, 7)
-      gen_side(24, 8, 7)
-      gen_side(8, 16, 7)
-    end
-
-    hor_link(cell(5, 11), cell(9, 11))
-    hor_link(cell(13, 11), cell(17, 11))
-    hor_link(cell(21, 11), cell(25, 11))
-    hor_link(cell(29, 11), cell(1, 11))
-
-    vert_link(cell(11, 5), cell(11, 9))
-    vert_link(cell(11, 13), cell(11, 17))
-
-    down_link(cell(11, 21), cell(27, 13))
-    up_link(cell(11, 1), cell(27, 9))
-
-    up_left_link(cell(3, 9), cell(9, 3))
-
-    down_left_link(cell(3, 13), cell(9, 19))
-
-    right_down_link(cell(13, 19), cell(19, 13))
-    right_up_link(cell(13, 3), cell(19, 9))
-
-  end
+class CubeSpaceBase < Space
+  private
 
   def gen_side(x, y, size)
     size.times do |row|
@@ -324,6 +296,67 @@ class CubeSpace < Space
 
     #c1.mark
     #c2.mark
+  end
+end
+
+class CubeSpace < CubeSpaceBase
+  def initialize(seed)
+    super(seed, 31) do
+      gen_side(8, 0, 7)
+      gen_side(0, 8, 7)
+      gen_side(8, 8, 7)
+      gen_side(16, 8, 7)
+      gen_side(24, 8, 7)
+      gen_side(8, 16, 7)
+    end
+
+    hor_link(cell(5, 11), cell(9, 11))
+    hor_link(cell(13, 11), cell(17, 11))
+    hor_link(cell(21, 11), cell(25, 11))
+    hor_link(cell(29, 11), cell(1, 11))
+
+    vert_link(cell(11, 5), cell(11, 9))
+    vert_link(cell(11, 13), cell(11, 17))
+
+    down_link(cell(11, 21), cell(27, 13))
+    up_link(cell(11, 1), cell(27, 9))
+
+    up_left_link(cell(3, 9), cell(9, 3))
+
+    down_left_link(cell(3, 13), cell(9, 19))
+
+    right_down_link(cell(13, 19), cell(19, 13))
+    right_up_link(cell(13, 3), cell(19, 9))
+  end
+end
+
+class FlatCubeSpace < CubeSpaceBase
+  def initialize(seed)
+    super(seed, 31) do
+      gen_side(0, 0, 7)
+      gen_side(8, 0, 7)
+      gen_side(16, 0, 7)
+      gen_side(0, 8, 7)
+      gen_side(8, 8, 7)
+      gen_side(16, 8, 7)
+    end
+
+    hor_link(cell(21, 3), cell(1, 3))
+    hor_link(cell(5, 3), cell(9, 3))
+    hor_link(cell(13, 3), cell(17, 3))
+
+    hor_link(cell(21, 11), cell(1, 11))
+    hor_link(cell(5, 11), cell(9, 11))
+    hor_link(cell(13, 11), cell(17, 11))
+
+    vert_link(cell(3, 13), cell(3, 1))
+    vert_link(cell(3, 5), cell(3, 9))
+
+    vert_link(cell(11, 13), cell(11, 1))
+    vert_link(cell(11, 5), cell(11, 9))
+
+    vert_link(cell(19, 13), cell(19, 1))
+    vert_link(cell(19, 5), cell(19, 9))
   end
 end
 
@@ -483,17 +516,19 @@ class RecursiveBacktracker
   end
 end
 
+def trac_and_render(seed, space, name)
+  RecursiveBacktracker.run(seed, space.cell(11, 11))
+  SpaceRenderer.new(space, 16).write("#{name}_%04d.png" % seed)
+end
 
 #100.times do |seed|
 seed = 6
   s = CubeSpace.new(seed)
-  #puts s
-  begin
-    RecursiveBacktracker.run(seed, s.cell(11, 11))
-  ensure
-    puts s
-  end
+  trac_and_render(seed, s, "cube_space")
 
-  SpaceRenderer.new(s, 16).write("sourface_%04d.png" % seed)
+  s = FlatCubeSpace.new(seed)
+  #puts s
+  trac_and_render(seed, s, "flat_cube_space")
+  puts s
 #end
 
