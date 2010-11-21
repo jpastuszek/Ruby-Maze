@@ -1,5 +1,6 @@
 #!/bin/env ruby
 
+require 'rubygems'
 require 'cairo'
 
 class Space
